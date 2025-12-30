@@ -1,6 +1,9 @@
 package in.bm.AuthService.CONTROLLER;
 
-import in.bm.AuthService.DTO.*;
+import in.bm.AuthService.REQUESTDTO.*;
+import in.bm.AuthService.RESPONSEDTO.AuthResponse;
+import in.bm.AuthService.RESPONSEDTO.SendOtpResponse;
+import in.bm.AuthService.RESPONSEDTO.VerifyOtpResponse;
 import in.bm.AuthService.SERVICE.AuthService;
 import in.bm.AuthService.SERVICE.JwtService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,7 +44,7 @@ public class AuthController {
 
 //localhost:8080/auth/oauth/google
     @PostMapping("/oauth/google")
-    public ResponseEntity<AuthResponse> googleAuth(@RequestBody OauthRequestDTO requestDTO,HttpServletResponse response){
+    public ResponseEntity<AuthResponse> googleAuth(@RequestBody OauthRequestDTO requestDTO, HttpServletResponse response) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.googleLogin(requestDTO , response));
     }
 }

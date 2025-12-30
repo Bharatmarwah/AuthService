@@ -1,4 +1,4 @@
-package in.bm.AuthService.DTO;
+package in.bm.AuthService.REQUESTDTO;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

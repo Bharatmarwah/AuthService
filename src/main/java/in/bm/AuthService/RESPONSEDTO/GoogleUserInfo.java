@@ -1,4 +1,4 @@
-package in.bm.AuthService.DTO;
+package in.bm.AuthService.RESPONSEDTO;
 
 import lombok.Builder;
 import lombok.Getter;

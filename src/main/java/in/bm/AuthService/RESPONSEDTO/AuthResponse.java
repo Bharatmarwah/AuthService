@@ -1,11 +1,13 @@
-package in.bm.AuthService.DTO;
+package in.bm.AuthService.RESPONSEDTO;
 
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
-public class VerifyOtpResponse {
+public class AuthResponse {
+
     private String token;
     private String tokenType;
+
 }
