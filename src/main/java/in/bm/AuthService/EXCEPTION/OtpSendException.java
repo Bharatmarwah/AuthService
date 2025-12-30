@@ -1,7 +1,7 @@
 package in.bm.AuthService.EXCEPTION;
 
-public class OtpSendException extends RuntimeException{
-    public OtpSendException(String message){
-        super(message);
+public class OtpSendException extends AuthException{
+    public OtpSendException(String message,Throwable cause){
+        super(message,cause);
     }
 }

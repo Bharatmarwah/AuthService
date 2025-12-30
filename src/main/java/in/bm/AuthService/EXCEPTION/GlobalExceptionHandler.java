@@ -1,39 +1,54 @@
 package in.bm.AuthService.EXCEPTION;
 
+import in.bm.AuthService.RESPONSEDTO.ApiError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
-
-
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(OtpSendException.class)
-    public ResponseEntity<?> handleOtpSendException(OtpSendException ex) {
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of(
-                        "error", "OTP_SEND_FAILED",
-                        "message", ex.getMessage(),
-                        "timestamp", LocalDateTime.now()
-                ));
+    @ExceptionHandler(InvalidOtpException.class)
+    public ResponseEntity<ApiError> handleInvalidOtp(InvalidOtpException ex) {
+        return build(ex, HttpStatus.UNAUTHORIZED);
     }
 
-    @ExceptionHandler(InvalidOtpException.class)
-    public ResponseEntity<?> handleInvalidOtpException(InvalidOtpException ex) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of(
-                        "error", "INVALID_OTP",
-                        "message", ex.getMessage(),
-                        "timestamp", LocalDateTime.now()
-                ));
+    @ExceptionHandler(OauthAuthenticationException.class)
+    public ResponseEntity<ApiError> handleOauth(OauthAuthenticationException ex) {
+        return build(ex, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiError> handleUserNotFound(UserNotFoundException ex) {
+        return build(ex, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(OtpSendException.class)
+    public ResponseEntity<ApiError> handleOtpSend(OtpSendException ex) {
+        return build(ex, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @ExceptionHandler(OtpVerifyException.class)
+    public ResponseEntity<ApiError> handleOtpVerify(OtpVerifyException ex) {
+        return build(ex, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ApiError> handleAuthFallback(AuthException ex) {
+        return build(ex, HttpStatus.UNAUTHORIZED);
+    }
+
+    private ResponseEntity<ApiError> build(Exception ex, HttpStatus status) {
+
+        ApiError error = new ApiError(
+                status.getReasonPhrase(),
+                ex.getMessage(),
+                status.value(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity.status(status).body(error);
     }
 }
-
-
