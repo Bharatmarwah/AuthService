@@ -2,6 +2,7 @@ package in.bm.AuthService.CONTROLLER;
 
 import in.bm.AuthService.REQUESTDTO.*;
 import in.bm.AuthService.RESPONSEDTO.AuthResponse;
+import in.bm.AuthService.RESPONSEDTO.CreateAdminResponseDTO;
 import in.bm.AuthService.RESPONSEDTO.SendOtpResponse;
 import in.bm.AuthService.RESPONSEDTO.VerifyOtpResponse;
 import in.bm.AuthService.SERVICE.AuthService;
@@ -47,4 +48,20 @@ public class AuthController {
     public ResponseEntity<AuthResponse> googleAuth(@RequestBody OauthRequestDTO requestDTO, HttpServletResponse response) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.googleLogin(requestDTO , response));
     }
+
+//localhost:8080/auth/internal/admin
+    @PostMapping("/internal/admin")
+    public ResponseEntity<CreateAdminResponseDTO> createAdmin(@Valid @RequestBody CreateAdminRequestDTO requestDTO){
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.createAdmin(requestDTO));
+    }
+
+
+//localhost:8080/auth/admin/login
+    @PostMapping("/admin/login")
+    public ResponseEntity<AuthResponse> adminLogin(@Valid @RequestBody AdminLoginRequestDTO requestDTO, HttpServletResponse response){
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.adminLogin(requestDTO, response));
+    }
+
+
+
 }

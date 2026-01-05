@@ -1,5 +1,6 @@
 package in.bm.AuthService.SERVICE;
 
+import in.bm.AuthService.ENTITY.Role;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -26,9 +27,11 @@ public class JwtService {
 
 
 
-    public String generateAccessToken(UUID userId){
+    public String generateAccessToken(UUID userId , Role role){
         return Jwts.builder()
+                .issuer("kitflik-auth-service")
                 .claim("type","ACCESS")
+                .claim("role",role)
                 .setSubject(userId.toString())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis()+Access_Token_Validity))
@@ -36,9 +39,11 @@ public class JwtService {
                 .compact();
     }
 
-    public String generateRefreshToken(UUID userId){
+    public String generateRefreshToken(UUID userId, Role role){
         return Jwts.builder()
+                .issuer("kitflik-auth-service")
                 .claim("type","REFRESH")
+                .claim("role",role)
                 .setSubject(userId.toString())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis()+Refresh_Token_Validity))

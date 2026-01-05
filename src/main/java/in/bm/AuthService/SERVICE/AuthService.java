@@ -3,9 +3,12 @@ package in.bm.AuthService.SERVICE;
 import com.twilio.exception.ApiException;
 import com.twilio.rest.verify.v2.service.Verification;
 import com.twilio.rest.verify.v2.service.VerificationCheck;
+import in.bm.AuthService.ENTITY.AuthAdmin;
 import in.bm.AuthService.ENTITY.AuthUser;
 import in.bm.AuthService.ENTITY.Provider;
+import in.bm.AuthService.ENTITY.Role;
 import in.bm.AuthService.EXCEPTION.*;
+import in.bm.AuthService.REPOSITORY.AuthAdminRepo;
 import in.bm.AuthService.REPOSITORY.AuthUserRepo;
 import in.bm.AuthService.REQUESTDTO.*;
 import in.bm.AuthService.RESPONSEDTO.*;
@@ -14,7 +17,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -30,9 +36,28 @@ public class AuthService {
     public static final String TOKEN_TYPE = "Bearer";
 
     private final AuthUserRepo authUserRepo;
+    private final AuthAdminRepo authAdminRepo;
     private final JwtService jwtService;
     private final GoogleTokenVerifier googleTokenVerifier;
+    private final BCryptPasswordEncoder passwordEncoder;
 
+
+    public CreateAdminResponseDTO createAdmin(@Valid CreateAdminRequestDTO requestDTO) {
+
+        AuthAdmin admin = new AuthAdmin();
+        admin.setUsername(requestDTO.getUsername());
+        admin.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
+        admin.setCreatedAt(Instant.now());
+        admin.setRole(Role.ROLE_ADMIN);
+
+        AuthAdmin savedAdmin = authAdminRepo.save(admin);
+
+        return CreateAdminResponseDTO
+                .builder()
+                .adminId(savedAdmin.getAdminId())
+                .message("Created Successfully")
+                .build();
+    }
 
 
     public SendOtpResponse sendOtp(@Valid SendOtpRequest request) {
@@ -50,6 +75,7 @@ public class AuthService {
                         user.setPhoneNumber(request.getPhoneNumber());
                         user.setProvider(Provider.OTP);
                         user.setCreatedAt(Instant.now());
+                        user.setRole(Role.ROLE_USER);
                         return authUserRepo.save(user);
                     });
 
@@ -82,8 +108,8 @@ public class AuthService {
             AuthUser user = authUserRepo.findByPhoneNumber(request.getPhoneNumber())
                     .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-            String accessToken = jwtService.generateAccessToken(user.getId());
-            String refreshToken = jwtService.generateRefreshToken(user.getId());
+            String accessToken = jwtService.generateAccessToken(user.getUserId(), user.getRole());
+            String refreshToken = jwtService.generateRefreshToken(user.getUserId(), user.getRole());
 
             addRefreshCookie(response, refreshToken);
 
@@ -114,8 +140,8 @@ public class AuthService {
                     .findByProviderAndEmail(Provider.GOOGLE, googleUser.getEmail())
                     .orElseGet(() -> createGoogleUser(googleUser));
 
-            String accessToken = jwtService.generateAccessToken(user.getId());
-            String refreshToken = jwtService.generateRefreshToken(user.getId());
+            String accessToken = jwtService.generateAccessToken(user.getUserId(), user.getRole());
+            String refreshToken = jwtService.generateRefreshToken(user.getUserId(), user.getRole());
 
             addRefreshCookie(response, refreshToken);
 
@@ -133,7 +159,6 @@ public class AuthService {
         }
     }
 
-
     private AuthUser createGoogleUser(GoogleUserInfo info) {
         AuthUser user = new AuthUser();
         user.setEmail(info.getEmail());
@@ -149,5 +174,24 @@ public class AuthService {
         cookie.setPath("/");
         cookie.setMaxAge(30 * 24 * 60 * 60); // 30 days
         response.addCookie(cookie);
+    }
+
+    public AuthResponse adminLogin(@Valid AdminLoginRequestDTO requestDTO, HttpServletResponse response) {
+
+        AuthAdmin admin = authAdminRepo
+                .findByUsername(requestDTO.getUsername())
+                .orElseThrow(
+                        () -> new UserNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(requestDTO.getPassword(), admin.getPasswordHash())) {
+            throw new BadCredentialsException("Password is invalid");
+        }
+
+        String accessToken = jwtService.generateAccessToken(admin.getAdminId(), Role.ROLE_ADMIN);
+        String refreshToken = jwtService.generateRefreshToken(admin.getAdminId(), Role.ROLE_ADMIN);
+
+        addRefreshCookie(response, refreshToken);
+
+        return AuthResponse.builder().token(accessToken).tokenType(TOKEN_TYPE).build();
     }
 }

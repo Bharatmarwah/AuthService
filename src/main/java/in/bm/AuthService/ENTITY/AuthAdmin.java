@@ -1,32 +1,31 @@
 package in.bm.AuthService.ENTITY;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name = "auth_users")
-public class AuthUser {
+@Table(name = "auth_admins")
+public class AuthAdmin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID userId;
+    private UUID adminId;
 
-    @Column(unique = true)
-    private String phoneNumber;
+    @Column(nullable = false,unique = true)
+    private String username;
 
-    @Column(unique = true)
-    private String email;
-
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Provider provider;
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
