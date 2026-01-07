@@ -15,9 +15,9 @@ import in.bm.AuthService.RESPONSEDTO.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -42,22 +42,7 @@ public class AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
 
 
-    public CreateAdminResponseDTO createAdmin(@Valid CreateAdminRequestDTO requestDTO) {
 
-        AuthAdmin admin = new AuthAdmin();
-        admin.setUsername(requestDTO.getUsername());
-        admin.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
-        admin.setCreatedAt(Instant.now());
-        admin.setRole(Role.ROLE_ADMIN);
-
-        AuthAdmin savedAdmin = authAdminRepo.save(admin);
-
-        return CreateAdminResponseDTO
-                .builder()
-                .adminId(savedAdmin.getAdminId())
-                .message("Created Successfully")
-                .build();
-    }
 
 
     public SendOtpResponse sendOtp(@Valid SendOtpRequest request) {
@@ -164,6 +149,7 @@ public class AuthService {
         user.setEmail(info.getEmail());
         user.setProvider(Provider.GOOGLE);
         user.setCreatedAt(Instant.now());
+        user.setRole(Role.ROLE_USER);
         return authUserRepo.save(user);
     }
 
@@ -176,12 +162,32 @@ public class AuthService {
         response.addCookie(cookie);
     }
 
+    public CreateAdminResponseDTO createAdmin(@Valid CreateAdminRequestDTO requestDTO) {
+
+        if (authAdminRepo.findByUsername(requestDTO.getUsername()).isPresent()) {
+            throw new AdminNotFoundException("Admin with this username already exists");
+        }
+
+        AuthAdmin admin = new AuthAdmin();
+        admin.setUsername(requestDTO.getUsername());
+        admin.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
+        admin.setCreatedAt(Instant.now());
+        admin.setRole(Role.ROLE_ADMIN);
+
+        AuthAdmin savedAdmin = authAdminRepo.save(admin);
+        return CreateAdminResponseDTO
+                .builder()
+                .adminId(savedAdmin.getAdminId())
+                .message("Created Successfully")
+                .build();
+    }
+
     public AuthResponse adminLogin(@Valid AdminLoginRequestDTO requestDTO, HttpServletResponse response) {
 
         AuthAdmin admin = authAdminRepo
                 .findByUsername(requestDTO.getUsername())
                 .orElseThrow(
-                        () -> new UserNotFoundException("User not found"));
+                        () -> new AdminNotFoundException("Admin not found"));
 
         if (!passwordEncoder.matches(requestDTO.getPassword(), admin.getPasswordHash())) {
             throw new BadCredentialsException("Password is invalid");
@@ -193,5 +199,13 @@ public class AuthService {
         addRefreshCookie(response, refreshToken);
 
         return AuthResponse.builder().token(accessToken).tokenType(TOKEN_TYPE).build();
+    }
+
+    public void deleteAdmin(String username) {
+        AuthAdmin admin = authAdminRepo.findByUsername(username)
+                .orElseThrow(() ->
+                        new AdminNotFoundException("Admin not found"));
+
+        authAdminRepo.deleteById(admin.getAdminId());
     }
 }

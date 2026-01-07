@@ -9,4 +9,5 @@ import java.util.UUID;
 
 public interface AuthAdminRepo extends JpaRepository<AuthAdmin,UUID> {
     Optional<AuthAdmin> findByUsername(@NotBlank String username);
+
 }
