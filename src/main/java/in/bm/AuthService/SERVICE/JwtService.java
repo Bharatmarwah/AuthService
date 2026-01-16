@@ -27,24 +27,24 @@ public class JwtService {
 
 
 
-    public String generateAccessToken(UUID userId , Role role){
+    public String generateAccessToken(String userId , String role){
         return Jwts.builder()
                 .issuer("kitflik-auth-service")
                 .claim("type","ACCESS")
                 .claim("role",role)
-                .setSubject(userId.toString())
+                .setSubject(userId)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis()+Access_Token_Validity))
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String generateRefreshToken(UUID userId, Role role){
+    public String generateRefreshToken(String userId, String role){
         return Jwts.builder()
                 .issuer("kitflik-auth-service")
                 .claim("type","REFRESH")
                 .claim("role",role)
-                .setSubject(userId.toString())
+                .setSubject(userId)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis()+Refresh_Token_Validity))
                 .signWith(getKey(), SignatureAlgorithm.HS256)

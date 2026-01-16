@@ -13,17 +13,20 @@ import in.bm.AuthService.REPOSITORY.AuthUserRepo;
 import in.bm.AuthService.REQUESTDTO.*;
 import in.bm.AuthService.RESPONSEDTO.*;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Arrays;
 
 @Service
 @RequiredArgsConstructor
@@ -40,9 +43,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final GoogleTokenVerifier googleTokenVerifier;
     private final BCryptPasswordEncoder passwordEncoder;
-
-
-
+    private final JwtDecoder jwtDecoder;
 
 
     public SendOtpResponse sendOtp(@Valid SendOtpRequest request) {
@@ -93,8 +94,8 @@ public class AuthService {
             AuthUser user = authUserRepo.findByPhoneNumber(request.getPhoneNumber())
                     .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-            String accessToken = jwtService.generateAccessToken(user.getUserId(), user.getRole());
-            String refreshToken = jwtService.generateRefreshToken(user.getUserId(), user.getRole());
+            String accessToken = jwtService.generateAccessToken(user.getUserId().toString(), user.getRole().toString());
+            String refreshToken = jwtService.generateRefreshToken(user.getUserId().toString(), user.getRole().toString());
 
             addRefreshCookie(response, refreshToken);
 
@@ -125,8 +126,8 @@ public class AuthService {
                     .findByProviderAndEmail(Provider.GOOGLE, googleUser.getEmail())
                     .orElseGet(() -> createGoogleUser(googleUser));
 
-            String accessToken = jwtService.generateAccessToken(user.getUserId(), user.getRole());
-            String refreshToken = jwtService.generateRefreshToken(user.getUserId(), user.getRole());
+            String accessToken = jwtService.generateAccessToken(user.getUserId().toString(), user.getRole().toString());
+            String refreshToken = jwtService.generateRefreshToken(user.getUserId().toString(), user.getRole().toString());
 
             addRefreshCookie(response, refreshToken);
 
@@ -193,8 +194,8 @@ public class AuthService {
             throw new BadCredentialsException("Password is invalid");
         }
 
-        String accessToken = jwtService.generateAccessToken(admin.getAdminId(), Role.ROLE_ADMIN);
-        String refreshToken = jwtService.generateRefreshToken(admin.getAdminId(), Role.ROLE_ADMIN);
+        String accessToken = jwtService.generateAccessToken(admin.getAdminId().toString(), Role.ROLE_ADMIN.toString());
+        String refreshToken = jwtService.generateRefreshToken(admin.getAdminId().toString(), Role.ROLE_ADMIN.toString());
 
         addRefreshCookie(response, refreshToken);
 
@@ -208,4 +209,40 @@ public class AuthService {
 
         authAdminRepo.deleteById(admin.getAdminId());
     }
+
+    public AuthResponse refreshToken(HttpServletRequest request) {
+
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            throw new AuthException("Cookies missing");
+        }
+
+        log.info(cookies.toString());
+
+        String refreshToken = Arrays.stream(cookies)
+                .filter(c -> "refresh-token".equals(c.getName()))
+                .findFirst()
+                .orElseThrow(() -> new AuthException("Refresh token missing"))
+                .getValue();
+
+        log.info(refreshToken);
+
+        Jwt jwt = jwtDecoder.decode(refreshToken);
+
+        if (!"kitflik-auth-service".equals(jwt.getClaim("iss"))
+                || !"REFRESH".equals(jwt.getClaim("type"))) {
+            throw new AuthException("Invalid refresh token");
+        }
+
+        String userId = jwt.getSubject();
+        String role = jwt.getClaim("role");
+
+        String newAccessToken = jwtService.generateAccessToken(userId, role);
+
+        return AuthResponse.builder()
+                .token(newAccessToken)
+                .tokenType(TOKEN_TYPE)
+                .build();
+    }
+
 }

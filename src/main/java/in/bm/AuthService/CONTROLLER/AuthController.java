@@ -5,6 +5,7 @@ import in.bm.AuthService.RESPONSEDTO.AuthResponse;
 import in.bm.AuthService.RESPONSEDTO.SendOtpResponse;
 import in.bm.AuthService.RESPONSEDTO.VerifyOtpResponse;
 import in.bm.AuthService.SERVICE.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,13 @@ public class AuthController {
     public ResponseEntity<AuthResponse> adminLogin(@Valid @RequestBody AdminLoginRequestDTO requestDTO, HttpServletResponse response) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.adminLogin(requestDTO, response));
     }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthResponse> refreshToken(HttpServletRequest request){
+        return ResponseEntity.status(HttpStatus.OK).body(authService.refreshToken(request));
+    }
+
+
 
     @GetMapping("test")
     public String test() {
