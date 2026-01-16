@@ -22,11 +22,14 @@ public class InternalController {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.createAdmin(requestDTO));
     }
 
-    //localhost:8080/internal/admin/delete/{username}
-    @DeleteMapping("/delete/{username}")
-    public ResponseEntity<Void> deleteAdmin(@PathVariable String username){
-        authService.deleteAdmin(username);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
+    // todo internal admin hidden apis
+
+    // todo high level of security in creating of admin
+
+    // todo role :- admin , super admin
+    //  todo status - active , deleted , suspended
+
+
+
 
 }

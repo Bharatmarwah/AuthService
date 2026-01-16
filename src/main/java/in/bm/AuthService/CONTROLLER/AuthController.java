@@ -47,7 +47,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.OK).body(authService.googleLogin(requestDTO, response));
     }
 
-
+    // todo admin and super admin protocols apis
     //localhost:8080/auth/admin/login
     @PostMapping("/admin/login")
     public ResponseEntity<AuthResponse> adminLogin(@Valid @RequestBody AdminLoginRequestDTO requestDTO, HttpServletResponse response) {

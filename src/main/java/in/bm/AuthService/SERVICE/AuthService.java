@@ -202,14 +202,6 @@ public class AuthService {
         return AuthResponse.builder().token(accessToken).tokenType(TOKEN_TYPE).build();
     }
 
-    public void deleteAdmin(String username) {
-        AuthAdmin admin = authAdminRepo.findByUsername(username)
-                .orElseThrow(() ->
-                        new AdminNotFoundException("Admin not found"));
-
-        authAdminRepo.deleteById(admin.getAdminId());
-    }
-
     public AuthResponse refreshToken(HttpServletRequest request) {
 
         Cookie[] cookies = request.getCookies();
