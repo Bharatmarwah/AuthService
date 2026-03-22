@@ -7,6 +7,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -18,8 +19,8 @@ import java.util.UUID;
 @Slf4j
 public class JwtService {
 
-    private static final String
-            secretKey = "YjkxYTczZDgzN2I2NDk4N2MxZWMyNGUwODZjYmY4YzIyZjQzMDE5OWE2NmQ2N2E5M2Q0MzFjYTFmYzU0MGI3MQ==";
+    @Value("${jwt.secret.key}")
+    private final String secretKey;
 
 
     private static final long Access_Token_Validity = 60 * 3 * 1000l;

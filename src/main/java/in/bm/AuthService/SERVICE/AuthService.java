@@ -75,7 +75,6 @@ public class AuthService {
         }
     }
 
-
     public VerifyOtpResponse verifyOtp(
             @Valid VerifyOtpRequest request,
             HttpServletResponse response

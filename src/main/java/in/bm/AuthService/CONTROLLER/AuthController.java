@@ -22,6 +22,7 @@ public class AuthController {
     private final AuthService authService;
 
     //localhost:8080/auth/otp/send
+    //Phone number login request
     @PostMapping("/otp/send")
     public ResponseEntity<SendOtpResponse> sendOtp(@Valid
                                                    @RequestBody
