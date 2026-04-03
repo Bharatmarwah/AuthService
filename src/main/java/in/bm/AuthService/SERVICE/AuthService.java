@@ -19,6 +19,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -207,7 +208,6 @@ public class AuthService {
         if (cookies == null) {
             throw new AuthException("Cookies missing");
         }
-
         log.info(cookies.toString());
 
         String refreshToken = Arrays.stream(cookies)

@@ -62,10 +62,4 @@ public class AuthController {
 
 
 
-    @GetMapping("test")
-    public String test() {
-        return "working";
-    }
-
-
 }

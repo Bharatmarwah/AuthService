@@ -1,59 +1,63 @@
 package in.bm.AuthService.SERVICE;
 
-import in.bm.AuthService.ENTITY.Role;
+
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.security.Key;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Base64;
 import java.util.Date;
-import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class JwtService {
 
-    @Value("${jwt.secret.key}")
-    private final String secretKey;
+    private final String privateKey;
+
+    public JwtService(@Value("${jwt.private.key}") String privateKey) {
+        this.privateKey = privateKey;
+    }
+
+    private static final long Access_Token_Validity = 60 * 3 * 1000L;
+    private static final long Refresh_Token_Validity = 30L * 24 * 60 * 60 * 1000L;
 
 
-    private static final long Access_Token_Validity = 60 * 3 * 1000l;
-    private static final long Refresh_Token_Validity =  30L * 24 * 60 * 60 * 1000;
-
-
-
-    public String generateAccessToken(String userId , String role){
+    public String generateAccessToken(String userId, String role) {
         return Jwts.builder()
                 .issuer("kitflik-auth-service")
-                .claim("type","ACCESS")
-                .claim("role",role)
-                .setSubject(userId)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis()+Access_Token_Validity))
-                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .claim("type", "ACCESS")
+                .claim("role", role)
+                .subject(userId)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + Access_Token_Validity))
+                .signWith(privateKey(),Jwts.SIG.RS256)
                 .compact();
     }
 
-    public String generateRefreshToken(String userId, String role){
+    public String generateRefreshToken(String userId, String role) {
         return Jwts.builder()
                 .issuer("kitflik-auth-service")
-                .claim("type","REFRESH")
-                .claim("role",role)
-                .setSubject(userId)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis()+Refresh_Token_Validity))
-                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .claim("type", "REFRESH")
+                .claim("role", role)
+                .subject(userId)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + Refresh_Token_Validity))
+                .signWith(privateKey(),Jwts.SIG.RS256)
                 .compact();
     }
 
-    private Key getKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+    private PrivateKey privateKey() {
+        try {
+            byte[] keyByte = Base64.getDecoder().decode(privateKey);
+            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyByte);
+            KeyFactory factory = KeyFactory.getInstance("RSA");
+            return factory.generatePrivate(spec);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load private key", e);
+        }
     }
 }
