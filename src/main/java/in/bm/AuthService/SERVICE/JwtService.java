@@ -6,7 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
@@ -58,6 +60,16 @@ public class JwtService {
             return factory.generatePrivate(spec);
         } catch (Exception e) {
             throw new RuntimeException("Failed to load private key", e);
+        }
+    }
+
+    public String getTokenHash(String token) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA_256");
+            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(hash);
+        }catch (Exception e){
+            throw new RuntimeException("Failed to refresh token", e);
         }
     }
 }

@@ -2,7 +2,6 @@ package in.bm.AuthService.CONTROLLER;
 
 import in.bm.AuthService.REQUESTDTO.*;
 import in.bm.AuthService.RESPONSEDTO.AuthResponse;
-import in.bm.AuthService.RESPONSEDTO.SendOtpResponse;
 import in.bm.AuthService.RESPONSEDTO.VerifyOtpResponse;
 import in.bm.AuthService.SERVICE.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,12 +23,12 @@ public class AuthController {
     //localhost:8080/auth/otp/send
     //Phone number login request
     @PostMapping("/otp/send")
-    public ResponseEntity<SendOtpResponse> sendOtp(@Valid
+    public ResponseEntity<Void> sendOtp(@Valid
                                                    @RequestBody
                                                    SendOtpRequest sendOtpRequest) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(authService.sendOtp(sendOtpRequest));
+        authService.sendOtp(sendOtpRequest);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     //localhost:8080/auth/otp/verify
@@ -48,16 +47,16 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.OK).body(authService.googleLogin(requestDTO, response));
     }
 
-    // todo admin and super admin protocols apis
-    //localhost:8080/auth/admin/login
-    @PostMapping("/admin/login")
-    public ResponseEntity<AuthResponse> adminLogin(@Valid @RequestBody AdminLoginRequestDTO requestDTO, HttpServletResponse response) {
-        return ResponseEntity.status(HttpStatus.OK).body(authService.adminLogin(requestDTO, response));
-    }
+//    // todo admin and super admin protocols apis
+//    //localhost:8080/auth/admin/login
+//    @PostMapping("/admin/login")
+//    public ResponseEntity<AuthResponse> adminLogin(@Valid @RequestBody AdminLoginRequestDTO requestDTO, HttpServletResponse response) {
+//        return ResponseEntity.status(HttpStatus.OK).body(authService.adminLogin(requestDTO, response));
+//    }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<AuthResponse> refreshToken(HttpServletRequest request){
-        return ResponseEntity.status(HttpStatus.OK).body(authService.refreshToken(request));
+    public ResponseEntity<AuthResponse> refreshToken(HttpServletRequest request,HttpServletResponse response){
+        return ResponseEntity.status(HttpStatus.OK).body(authService.refreshToken(request , response));
     }
 
 

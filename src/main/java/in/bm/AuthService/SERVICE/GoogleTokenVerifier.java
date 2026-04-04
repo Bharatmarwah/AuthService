@@ -8,6 +8,8 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+
 @Component
 public class GoogleTokenVerifier {
     private final JwtDecoder jwtDecoder;
@@ -25,6 +27,13 @@ public class GoogleTokenVerifier {
     public GoogleUserInfo verify(String idToken) {
         Jwt jwt = jwtDecoder.decode(idToken);
 
+        Instant expiresAt = jwt.getExpiresAt();
+
+        if (expiresAt!=null && expiresAt.isBefore(Instant.now())){
+            throw new OauthAuthenticationException("Token expired");
+        }
+
+
         if (!jwt.getAudience().contains(clientId)){
             throw new OauthAuthenticationException("Invalid token audience");
         }
@@ -33,6 +42,7 @@ public class GoogleTokenVerifier {
         if (emailVerified == null || !emailVerified){
             throw new OauthAuthenticationException("Email not verified by Google");
         }
+
 
         return GoogleUserInfo
                 .builder()

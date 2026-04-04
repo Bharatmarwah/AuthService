@@ -17,10 +17,10 @@ public class InternalController {
     private final AuthService authService;
 
     //localhost:8080/internal/admin/create
-    @PostMapping("/create")
-    public ResponseEntity<CreateAdminResponseDTO> createAdmin(@Valid @RequestBody CreateAdminRequestDTO requestDTO){
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.createAdmin(requestDTO));
-    }
+//    @PostMapping("/create")
+//    public ResponseEntity<CreateAdminResponseDTO> createAdmin(@Valid @RequestBody CreateAdminRequestDTO requestDTO){
+//        return ResponseEntity.status(HttpStatus.CREATED).body(authService.createAdmin(requestDTO));
+//    }
 
     // todo internal admin hidden apis
 

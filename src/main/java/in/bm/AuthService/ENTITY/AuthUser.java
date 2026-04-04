@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -34,4 +35,7 @@ public class AuthUser {
 
     @Column(nullable = false)
     private Instant createdAt;
+
+    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<RefreshToken> refreshTokens;
 }
