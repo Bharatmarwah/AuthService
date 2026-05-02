@@ -54,8 +54,9 @@ public class AuthController {
 //        return ResponseEntity.status(HttpStatus.OK).body(authService.adminLogin(requestDTO, response));
 //    }
 
+    // todo try catch
     @PostMapping("/refresh-token")
-    public ResponseEntity<AuthResponse> refreshToken(HttpServletRequest request,HttpServletResponse response){
+    public ResponseEntity<AuthResponse> refreshToken(HttpServletRequest request,HttpServletResponse response) throws Exception {
         return ResponseEntity.status(HttpStatus.OK).body(authService.refreshToken(request , response));
     }
 

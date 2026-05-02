@@ -25,6 +25,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -74,9 +75,10 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public VerifyOtpResponse verifyOtp(VerifyOtpRequest request, HttpServletResponse response) {
 
-        VerificationCheck check = VerificationCheck.creator(serviceSid)
+         VerificationCheck check = VerificationCheck.creator(serviceSid)
                 .setTo(request.getPhoneNumber())
                 .setCode(request.getOtp())
                 .create();
@@ -102,9 +104,10 @@ public class AuthService {
     }
 
 
+    @Transactional
     public AuthResponse googleLogin(OauthRequestDTO request, HttpServletResponse response) {
 
-        GoogleUserInfo googleUser = googleTokenVerifier.verify(request.getIdToken());
+         GoogleUserInfo googleUser = googleTokenVerifier.verify(request.getIdToken());
 
         AuthUser user = authUserRepo
                 .findByProviderAndEmail(Provider.GOOGLE, googleUser.getEmail())
@@ -157,9 +160,10 @@ public class AuthService {
 
     // ================= REFRESH =================
 
+    @Transactional
     public AuthResponse refreshToken(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        String refreshToken = extractRefreshToken(request);
+         String refreshToken = extractRefreshToken(request);
 
         String hash = jwtService.getTokenHash(refreshToken);
 
