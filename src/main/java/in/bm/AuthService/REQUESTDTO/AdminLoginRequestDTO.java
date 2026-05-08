@@ -11,3 +11,4 @@ public class AdminLoginRequestDTO {
     @NotBlank
     private String password;
 }
+    

@@ -18,6 +18,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.auth.InvalidCredentialsException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -26,9 +30,14 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +46,12 @@ public class AuthService {
 
     @Value("${twilio.verify.service-sid}")
     private String serviceSid;
+
+    @Value("${google.oauth.client-id}")
+    private String clientId;
+
+    @Value("${google.oauth.client-secret}")
+    private String clientSecret;
 
     public static final String TOKEN_TYPE = "Bearer";
 
@@ -58,6 +73,7 @@ public class AuthService {
                     "sms"
             ).create();
 
+            // Create new user or leave
             authUserRepo.findByPhoneNumber(request.getPhoneNumber())
                     .orElseGet(() -> {
                         AuthUser user = new AuthUser();
@@ -78,7 +94,7 @@ public class AuthService {
     @Transactional
     public VerifyOtpResponse verifyOtp(VerifyOtpRequest request, HttpServletResponse response) {
 
-         VerificationCheck check = VerificationCheck.creator(serviceSid)
+        VerificationCheck check = VerificationCheck.creator(serviceSid)
                 .setTo(request.getPhoneNumber())
                 .setCode(request.getOtp())
                 .create();
@@ -107,7 +123,7 @@ public class AuthService {
     @Transactional
     public AuthResponse googleLogin(OauthRequestDTO request, HttpServletResponse response) {
 
-         GoogleUserInfo googleUser = googleTokenVerifier.verify(request.getIdToken());
+        GoogleUserInfo googleUser = googleTokenVerifier.verify(request.getIdToken());
 
         AuthUser user = authUserRepo
                 .findByProviderAndEmail(Provider.GOOGLE, googleUser.getEmail())
@@ -163,7 +179,7 @@ public class AuthService {
     @Transactional
     public AuthResponse refreshToken(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-         String refreshToken = extractRefreshToken(request);
+        String refreshToken = extractRefreshToken(request);
 
         String hash = jwtService.getTokenHash(refreshToken);
 
@@ -245,6 +261,73 @@ public class AuthService {
         user.setRole(Role.ROLE_USER);
 
         return authUserRepo.save(user);
+    }
+
+    public GoogleResponse exchangeAuthorizationCode(String authorizationCode) {
+
+        String googleTokenEndpoint =
+                "https://oauth2.googleapis.com/token";
+
+        MultiValueMap<String, String> tokenRequestBody =
+                new LinkedMultiValueMap<>();
+
+        tokenRequestBody.add("code", authorizationCode);
+        tokenRequestBody.add("client_id", clientId);
+        tokenRequestBody.add("client_secret", clientSecret);
+        tokenRequestBody.add(
+                "redirect_uri",
+                "http://localhost:8080/public/oauth/callback"
+        );
+        tokenRequestBody.add(
+                "grant_type",
+                "authorization_code"
+        );
+
+        HttpHeaders requestHeaders = new HttpHeaders();
+
+        requestHeaders.setContentType(
+                MediaType.APPLICATION_FORM_URLENCODED
+        );
+
+        HttpEntity<MultiValueMap<String, String>> tokenRequest =
+                new HttpEntity<>(
+                        tokenRequestBody,
+                        requestHeaders
+                );
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity<Map> tokenResponse =
+                restTemplate.postForEntity(
+                        googleTokenEndpoint,
+                        tokenRequest,
+                        Map.class
+                );
+
+        Map<String, Object> tokenResponseBody =
+                tokenResponse.getBody();
+
+        String idToken =
+                (String) tokenResponseBody.get("id_token");
+
+        return GoogleResponse.builder()
+                .idToken(idToken)
+                .build();
+    }
+
+    public void loginWithGoogle(HttpServletResponse response) throws IOException {
+        String scope = "openid email profile";
+
+        String authUrl =
+                "https://accounts.google.com/o/oauth2/v2/auth?" +
+                        "client_id=" + clientId +
+                        "&redirect_uri=http://localhost:8080/public/oauth/callback" +
+                        "&response_type=code" +
+                        "&scope=" + scope +
+                        "&access_type=offline" +
+                        "&prompt=consent";
+
+        response.sendRedirect(authUrl);
     }
 }
 
