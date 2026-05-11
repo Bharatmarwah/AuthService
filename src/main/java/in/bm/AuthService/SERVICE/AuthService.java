@@ -16,18 +16,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.auth.InvalidCredentialsException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
-
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -140,6 +135,73 @@ public class AuthService {
                 .token(accessToken)
                 .tokenType(TOKEN_TYPE)
                 .build();
+    }
+
+    public GoogleResponse exchangeAuthorizationCode(String authorizationCode) {
+
+        String googleTokenEndpoint =
+                "https://oauth2.googleapis.com/token";
+
+        MultiValueMap<String, String> tokenRequestBody =
+                new LinkedMultiValueMap<>();
+
+        tokenRequestBody.add("code", authorizationCode);
+        tokenRequestBody.add("client_id", clientId);
+        tokenRequestBody.add("client_secret", clientSecret);
+        tokenRequestBody.add(
+                "redirect_uri",
+                "http://localhost:8080/public/oauth/callback"
+        );
+        tokenRequestBody.add(
+                "grant_type",
+                "authorization_code"
+        );
+
+        HttpHeaders requestHeaders = new HttpHeaders();
+
+        requestHeaders.setContentType(
+                MediaType.APPLICATION_FORM_URLENCODED
+        );
+
+        HttpEntity<MultiValueMap<String, String>> tokenRequest =
+                new HttpEntity<>(
+                        tokenRequestBody,
+                        requestHeaders
+                );
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity<Map> tokenResponse =
+                restTemplate.postForEntity(
+                        googleTokenEndpoint,
+                        tokenRequest,
+                        Map.class
+                );
+
+        Map<String, Object> tokenResponseBody =
+                tokenResponse.getBody();
+
+        String idToken =
+                (String) tokenResponseBody.get("id_token");
+
+        return GoogleResponse.builder()
+                .idToken(idToken)
+                .build();
+    }
+
+    public void loginWithGoogle(HttpServletResponse response) throws IOException {
+        String scope = "openid email profile";
+
+        String authUrl =
+                "https://accounts.google.com/o/oauth2/v2/auth?" +
+                        "client_id=" + clientId +
+                        "&redirect_uri=http://localhost:8080/public/oauth/callback" +
+                        "&response_type=code" +
+                        "&scope=" + scope +
+                        "&access_type=offline" +
+                        "&prompt=consent";
+
+        response.sendRedirect(authUrl);
     }
 
     // ================= HANDLE LOGIN =================
@@ -263,71 +325,6 @@ public class AuthService {
         return authUserRepo.save(user);
     }
 
-    public GoogleResponse exchangeAuthorizationCode(String authorizationCode) {
 
-        String googleTokenEndpoint =
-                "https://oauth2.googleapis.com/token";
-
-        MultiValueMap<String, String> tokenRequestBody =
-                new LinkedMultiValueMap<>();
-
-        tokenRequestBody.add("code", authorizationCode);
-        tokenRequestBody.add("client_id", clientId);
-        tokenRequestBody.add("client_secret", clientSecret);
-        tokenRequestBody.add(
-                "redirect_uri",
-                "http://localhost:8080/public/oauth/callback"
-        );
-        tokenRequestBody.add(
-                "grant_type",
-                "authorization_code"
-        );
-
-        HttpHeaders requestHeaders = new HttpHeaders();
-
-        requestHeaders.setContentType(
-                MediaType.APPLICATION_FORM_URLENCODED
-        );
-
-        HttpEntity<MultiValueMap<String, String>> tokenRequest =
-                new HttpEntity<>(
-                        tokenRequestBody,
-                        requestHeaders
-                );
-
-        RestTemplate restTemplate = new RestTemplate();
-
-        ResponseEntity<Map> tokenResponse =
-                restTemplate.postForEntity(
-                        googleTokenEndpoint,
-                        tokenRequest,
-                        Map.class
-                );
-
-        Map<String, Object> tokenResponseBody =
-                tokenResponse.getBody();
-
-        String idToken =
-                (String) tokenResponseBody.get("id_token");
-
-        return GoogleResponse.builder()
-                .idToken(idToken)
-                .build();
-    }
-
-    public void loginWithGoogle(HttpServletResponse response) throws IOException {
-        String scope = "openid email profile";
-
-        String authUrl =
-                "https://accounts.google.com/o/oauth2/v2/auth?" +
-                        "client_id=" + clientId +
-                        "&redirect_uri=http://localhost:8080/public/oauth/callback" +
-                        "&response_type=code" +
-                        "&scope=" + scope +
-                        "&access_type=offline" +
-                        "&prompt=consent";
-
-        response.sendRedirect(authUrl);
-    }
 }
 
