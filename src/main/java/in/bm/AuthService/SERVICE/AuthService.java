@@ -5,7 +5,6 @@ import com.twilio.rest.verify.v2.service.Verification;
 import com.twilio.rest.verify.v2.service.VerificationCheck;
 import in.bm.AuthService.ENTITY.*;
 import in.bm.AuthService.EXCEPTION.*;
-import in.bm.AuthService.REPOSITORY.AuthAdminRepo;
 import in.bm.AuthService.REPOSITORY.AuthUserRepo;
 import in.bm.AuthService.REPOSITORY.RefreshTokenRepo;
 import in.bm.AuthService.REQUESTDTO.*;
@@ -22,7 +21,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -51,10 +49,8 @@ public class AuthService {
     public static final String TOKEN_TYPE = "Bearer";
 
     private final AuthUserRepo authUserRepo;
-    private final AuthAdminRepo authAdminRepo;
     private final JwtService jwtService;
     private final GoogleTokenVerifier googleTokenVerifier;
-    private final BCryptPasswordEncoder passwordEncoder;
     private final RefreshTokenRepo refreshTokenRepo;
 
 
@@ -68,7 +64,6 @@ public class AuthService {
                     "sms"
             ).create();
 
-            // Create new user or leave
             authUserRepo.findByPhoneNumber(request.getPhoneNumber())
                     .orElseGet(() -> {
                         AuthUser user = new AuthUser();
@@ -204,7 +199,6 @@ public class AuthService {
         response.sendRedirect(authUrl);
     }
 
-    // ================= HANDLE LOGIN =================
 
     private void handleLogin(AuthUser user, HttpServletResponse response) {
 
@@ -219,7 +213,6 @@ public class AuthService {
         addRefreshCookie(response, refreshToken);
     }
 
-    // ================= SAVE TOKEN =================
 
     private void saveRefreshToken(AuthUser user, String refreshToken) {
 
@@ -236,7 +229,6 @@ public class AuthService {
         refreshTokenRepo.save(token);
     }
 
-    // ================= REFRESH =================
 
     @Transactional
     public AuthResponse refreshToken(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -285,7 +277,6 @@ public class AuthService {
                 .build();
     }
 
-    // ================= COOKIE =================
 
     private void addRefreshCookie(HttpServletResponse response, String refreshToken) {
 

@@ -2,27 +2,23 @@ package in.bm.AuthService.SERVICE;
 
 import in.bm.AuthService.EXCEPTION.OauthAuthenticationException;
 import in.bm.AuthService.RESPONSEDTO.GoogleUserInfo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
 @Component
+@RequiredArgsConstructor
 public class GoogleTokenVerifier {
+
     private final JwtDecoder jwtDecoder;
 
-    private final String clientId;
+    @Value("${google.oauth.client-id}")
+    private String clientId;
 
-    public GoogleTokenVerifier(@Value("${client-id}") String clientId) {
-        this.jwtDecoder = JwtDecoders
-                .fromIssuerLocation
-                        ("https://accounts.google.com");// Google public key for verification
-
-        this.clientId = clientId;
-    }
 
     public GoogleUserInfo verify(String idToken) {
         Jwt jwt = jwtDecoder.decode(idToken);
@@ -32,7 +28,6 @@ public class GoogleTokenVerifier {
         if (expiresAt!=null && expiresAt.isBefore(Instant.now())){
             throw new OauthAuthenticationException("Token expired");
         }
-
 
         if (!jwt.getAudience().contains(clientId)){
             throw new OauthAuthenticationException("Invalid token audience");
